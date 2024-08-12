@@ -7,6 +7,7 @@ use App\Models\Category;
 use App\Models\Color;
 use App\Models\Product;
 use App\Models\ProductColor;
+use App\Models\ProductImage;
 use App\Models\ProductSize;
 use App\Models\Subcategory;
 use Illuminate\Http\Request;
@@ -71,65 +72,90 @@ class ProductController extends Controller
     public function update($id, Request $request)
     {
         // dd($request->all());
+        
         $product = Product::getSigle($id);
-        $product->title = trim($request->title);
-        $product->sku = trim($request->sku);
-        $product->price = trim($request->price);
-        $product->old_price = trim($request->old_price);
-        $product->short_description = trim($request->short_description);
-        $product->description = trim($request->long_description);
-        $product->additional_information = trim($request->additional_information);
-        $product->shipping_return = trim($request->shipping_return);
-        $product->status = trim($request->status);
-        $product->created_by = Auth::user()->name;
-        $product->category_id = $request->category_id;
-        $product->subcategory_id = $request->subcategory_id;
-
-        ProductColor::deleteRecord($product->id);
-
-        if(!empty($request->product_color))
+        if(!empty($product))
         {
-            foreach($request->product_color as $color_id)
+            $product->title = trim($request->title);
+            $product->sku = trim($request->sku);
+            $product->price = trim($request->price);
+            $product->old_price = trim($request->old_price);
+            $product->short_description = trim($request->short_description);
+            $product->description = trim($request->long_description);
+            $product->additional_information = trim($request->additional_information);
+            $product->shipping_return = trim($request->shipping_return);
+            $product->status = trim($request->status);
+            $product->created_by = Auth::user()->name;
+            $product->category_id = $request->category_id;
+            $product->subcategory_id = $request->subcategory_id;
+    
+            ProductColor::deleteRecord($product->id);
+    
+            if(!empty($request->product_color))
             {
-                $productColor = new ProductColor();
-                $productColor->color_id = $color_id;
-                $productColor->product_id = $product->id;
-                $productColor->save();
-            }
-
-        }
-
-        ProductSize::deleteRecord($product->id);
-
-        if(!empty($request->size))
-        {
-            foreach($request->size as $size)
-            {   
-                if(!empty($size['name']))
+                foreach($request->product_color as $color_id)
                 {
-                    $saveSize = new ProductSize();
-                    $saveSize->name = $size['name'];
-                    $saveSize->price = $size['price'];
-                    $saveSize->product_id = $product->id;
-                    $saveSize->save();
-                }   
+                    $productColor = new ProductColor();
+                    $productColor->color_id = $color_id;
+                    $productColor->product_id = $product->id;
+                    $productColor->save();
+                }
+    
+            }
+    
+            ProductSize::deleteRecord($product->id);
+    
+            if(!empty($request->size))
+            {
+                foreach($request->size as $size)
+                {   
+                    if(!empty($size['name']))
+                    {
+                        $saveSize = new ProductSize();
+                        $saveSize->name = $size['name'];
+                        $saveSize->price = $size['price'];
+                        $saveSize->product_id = $product->id;
+                        $saveSize->save();
+                    }   
+                }
+    
             }
 
+            if(!empty($request->file('image')))
+            {
+              foreach($request->file('image') as $image)
+              {
+                if($image->isValid())
+                {
+                    $ext = $image->getClientOriginalExtension();
+                    $randomName = $product->id.Str::random(20);
+                    $fileName = strtolower($randomName).'.'.$ext;
+                    $image->move('upload/products/', $fileName);
+
+                    $productImage = new ProductImage();
+                    $productImage->name = $fileName;
+                    $productImage->extension = $ext;
+                    $productImage->product_id = $product->id;
+                    $productImage->save();
+                }
+              }
+            }
+    
+            $slug = Str::slug($request->title, "-");
+            $checkSlug = Product::checkSlug($slug);
+            if(empty($checkSlug))
+            {
+                $product->slug = $slug;
+            }
+            else
+            {
+                $product->slug = $slug.'-'.$product->id;
+            }
+    
+            $product->save();
+            return redirect('admin/product/list')->with('success', 'Product Successfully Updated!');
         }
 
-        $slug = Str::slug($request->title, "-");
-        $checkSlug = Product::checkSlug($slug);
-        if(empty($checkSlug))
-        {
-            $product->slug = $slug;
-        }
-        else
-        {
-            $product->slug = $slug.'-'.$product->id;
-        }
-
-        $product->save();
-        return redirect('admin/product/list')->with('success', 'Product Successfully Updated!');
     }
 
     // public function delete($id)

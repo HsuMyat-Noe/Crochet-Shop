@@ -19,7 +19,7 @@
                 <div class="row">
                     <div class="col-md-12">
                         <div class="card card-primary">
-                            <form action="{{ url('admin/product/edit/'.$getRecord->id) }}" method="POST">
+                            <form action="{{ url('admin/product/edit/'.$getRecord->id) }}" method="POST" enctype="multipart/form-data">
                                 @csrf
                                 <div class="card-body">
                                     <div class="row">
@@ -137,6 +137,12 @@
                                             <div class="form-group">
                                                 <label>Old Price <span class="text-danger">*</span></label>
                                                 <input type="text" class="form-control" value="{{ old('old_price', $getRecord->old_price) }}" name="old_price" placeholder="Enter Old Price" required>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <div class="form-group">
+                                                <label>Product Image</label>
+                                                <input type="file" class="form-control" accept="image/*" name="image[]" multiple>
                                             </div>
                                         </div>
                                         <div class="col-md-12">
